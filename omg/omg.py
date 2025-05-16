@@ -2,6 +2,7 @@
 
 import platform
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Literal, Optional
 
 from cffi import FFI
@@ -116,6 +117,9 @@ class MatchStats:
 class MatchResult:
     offset: int
     match: bytes
+    @property
+    def length(self) -> int:
+        return len(self.match)
 
 
 def _load_library() -> Optional[ffi.CData]:
@@ -136,21 +140,21 @@ def _load_library() -> Optional[ffi.CData]:
     else:
         raise RuntimeError(f"Unsupported architecture: {arch}")
 
+    lib_dir_path = Path(os.path.dirname(__file__)) / "native" / "lib"
     if system.startswith("linux"):
-        lib_name = f"libomg-linux-{arch}.so"
+        lib_path = lib_dir_path / f"libomg-linux-{arch}.so"
     elif system in {"win32", "cygwin"}:
-        lib_name = f"libomg-windows-{arch}.dll"
+        os.add_dll_directory(os.path.dirname(lib_dir_path))
+        lib_path = lib_dir_path / f"libomg-windows-{arch}.dll"
     elif system == "darwin":
-        lib_name = f"libomg-macos-{arch}.dylib"
+        lib_path = lib_dir_path / f"libomg-macos-{arch}.dylib"
     else:
         raise RuntimeError(f"Unsupported platform: {system}")
 
-    lib_path = os.path.join(os.path.dirname(__file__), "native", "lib", lib_name)
-
-    if not os.path.exists(lib_path):
+    if not lib_path.is_file():
         raise RuntimeError(f"Native library not found: {lib_path}")
 
-    return ffi.dlopen(lib_path)
+    return ffi.dlopen(str(lib_path))
 
 
 def _get_library() -> ffi.CData:

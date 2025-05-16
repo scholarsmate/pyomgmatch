@@ -62,8 +62,10 @@ def test_compile_and_match(tmp_path):
         haystack = b"xx foobar yy foo zz bar"
         results = m2.match(haystack)
         offsets = [r.offset for r in results]
+        lengths = [r.length for r in results]
         matches = [r.match for r in results]
         assert offsets == [3, 6, 13, 20]
+        assert lengths == [3, 3, 3, 3]
         assert matches == [b"foo", b"bar", b"foo", b"bar"]
 
         m_stats = m2.get_match_stats()
