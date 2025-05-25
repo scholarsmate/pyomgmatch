@@ -88,36 +88,70 @@ def match_mode(
 
 def main():
     parser = argparse.ArgumentParser(description="Pattern matching tool")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Enable verbose output"
+    )
 
-    subparsers = parser.add_subparsers(dest="mode", required=True, help="Select operation mode")
+    subparsers = parser.add_subparsers(
+        dest="mode", required=True, help="Select operation mode"
+    )
 
     # Compile mode parser
     compile_parser = subparsers.add_parser("compile", help="Compile patterns")
     compile_parser.add_argument("compiled", help="Output compiled file")
     compile_parser.add_argument("patterns", help="Input patterns file")
-    compile_parser.add_argument("--ignore-case", action="store_true", help="Ignore case in patterns")
-    compile_parser.add_argument("--ignore-punctuation", action="store_true", help="Ignore punctuation in patterns")
-    compile_parser.add_argument("--elide-whitespace", action="store_true", help="Remove whitespace in patterns")
+    compile_parser.add_argument(
+        "--ignore-case", action="store_true", help="Ignore case in patterns"
+    )
+    compile_parser.add_argument(
+        "--ignore-punctuation",
+        action="store_true",
+        help="Ignore punctuation in patterns",
+    )
+    compile_parser.add_argument(
+        "--elide-whitespace", action="store_true", help="Remove whitespace in patterns"
+    )
 
     # Match mode parser
     match_parser = subparsers.add_parser("match", help="Match patterns")
     match_parser.add_argument("compiled", help="Input compiled file")
     match_parser.add_argument("haystack", help="Input haystack file")
-    match_parser.add_argument("--ignore-case", action="store_true", help="Ignore case during matching")
-    match_parser.add_argument("--ignore-punctuation", action="store_true", help="Ignore punctuation during matching")
-    match_parser.add_argument("--elide-whitespace", action="store_true", help="Remove whitespace during matching")
-    match_parser.add_argument("--longest", action="store_true", help="Only return longest matches")
-    match_parser.add_argument("--no-overlap", action="store_true", help="Avoid overlapping matches")
-    match_parser.add_argument("--word-boundary", action="store_true", help="Only match at word boundaries")
-    match_parser.add_argument("--threads", type=int, default=0, help="Number of threads to use")
-    match_parser.add_argument("--chunk-size", type=int, default=0, help="Chunk size for parallel processing")
+    match_parser.add_argument(
+        "--ignore-case", action="store_true", help="Ignore case during matching"
+    )
+    match_parser.add_argument(
+        "--ignore-punctuation",
+        action="store_true",
+        help="Ignore punctuation during matching",
+    )
+    match_parser.add_argument(
+        "--elide-whitespace",
+        action="store_true",
+        help="Remove whitespace during matching",
+    )
+    match_parser.add_argument(
+        "--longest", action="store_true", help="Only return longest matches"
+    )
+    match_parser.add_argument(
+        "--no-overlap", action="store_true", help="Avoid overlapping matches"
+    )
+    match_parser.add_argument(
+        "--word-boundary", action="store_true", help="Only match at word boundaries"
+    )
+    match_parser.add_argument(
+        "--threads", type=int, default=0, help="Number of threads to use"
+    )
+    match_parser.add_argument(
+        "--chunk-size", type=int, default=0, help="Chunk size for parallel processing"
+    )
 
     argcomplete.autocomplete(parser)
 
     # Allow `-h compile` or `-h match` to redirect to `compile -h` or `match -h` respectively
     if "-h" in sys.argv or "--help" in sys.argv:
-        help_index = sys.argv.index("-h") if "-h" in sys.argv else sys.argv.index("--help")
+        help_index = (
+            sys.argv.index("-h") if "-h" in sys.argv else sys.argv.index("--help")
+        )
         if help_index + 1 < len(sys.argv):
             mode = sys.argv[help_index + 1]
             if mode in subparsers.choices:

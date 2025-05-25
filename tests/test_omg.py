@@ -2,8 +2,7 @@
 
 import pytest
 
-from omg.omg import (Compiler, Matcher, MatchStats, PatternStoreStats,
-                     get_version)
+from omg.omg import Compiler, Matcher, MatchStats, PatternStoreStats, get_version
 
 
 def write_file(path, lines):
@@ -118,7 +117,9 @@ def test_case_insensitive_matching(tmp_path):
 def test_ignore_punctuation_and_case(tmp_path):
     pattern_buffer = b"f'oo\nbar\n"
     compiled_file = str(tmp_path / "matcher.omg")
-    Compiler.compile_from_buffer(compiled_file, pattern_buffer, ignore_punctuation=True, case_insensitive=True)
+    Compiler.compile_from_buffer(
+        compiled_file, pattern_buffer, ignore_punctuation=True, case_insensitive=True
+    )
     with Matcher(str(compiled_file)) as m:
         hay = b"f'oo BAR Baz fooBar"
         results = m.match(hay)
@@ -161,6 +162,36 @@ def test_word_boundary(tmp_path):
         assert res_wb[0].offset == 5
 
 
+def test_word_prefix(tmp_path):
+    patterns = ["foo", "bar"]
+    pat_file = tmp_path / "patterns.txt"
+    write_file(pat_file, patterns)
+    with Matcher(str(pat_file)) as m:
+        hay = b"foobar foo barbar"
+        # Only match at start of word
+        results = m.match(hay, word_prefix=True)
+        offsets = [r.offset for r in results]
+        matches = [r.match for r in results]
+        # "foo" at offsets 0 and 7, "bar" at offset 3 and 11 but only prefixes
+        assert offsets == [0, 7, 11]
+        assert matches == [b"foo", b"foo", b"bar"]
+
+
+def test_word_suffix(tmp_path):
+    patterns = ["foo", "bar"]
+    pat_file = tmp_path / "patterns.txt"
+    write_file(pat_file, patterns)
+    with Matcher(str(pat_file)) as m:
+        hay = b"foofoo toolbar bar"
+        # Only match at end of word
+        results = m.match(hay, word_suffix=True)
+        offsets = [r.offset for r in results]
+        matches = [r.match for r in results]
+        # "foo" at end of word at offset 3, "bar" at offset 11 and 15
+        assert offsets == [3, 11, 15]
+        assert matches == [b"foo", b"bar", b"bar"]
+
+
 def test_set_threads(tmp_path):
     patterns = ["foo", "bar"]
     pat_file = tmp_path / "patterns.txt"
@@ -187,3 +218,33 @@ def test_set_threads(tmp_path):
             m.set_threads(-1)
         with pytest.raises(ValueError):
             m.set_chunk_size(-1)
+
+
+def test_word_prefix(tmp_path):
+    patterns = ["foo"]
+    pat_file = tmp_path / "patterns.txt"
+    write_file(pat_file, patterns)
+    with Matcher(str(pat_file)) as m:
+        hay = b"foobar foo foo barfoo"
+        # Only match 'foo' at start and as a full word
+        results = m.match(hay, word_prefix=True)
+        offsets = [r.offset for r in results]
+        matches = [r.match for r in results]
+        # 'foo' in 'foobar' is prefix but not full word; matches at offsets 7 and 11
+        assert offsets == [0, 7, 11]
+        assert matches == [b"foo", b"foo", b"foo"]
+
+
+def test_word_suffix(tmp_path):
+    patterns = ["foo"]
+    pat_file = tmp_path / "patterns.txt"
+    write_file(pat_file, patterns)
+    with Matcher(str(pat_file)) as m:
+        hay = b"foobar foo foo barfoo"
+        # Only match 'foo' at end of word and as a full word
+        results = m.match(hay, word_suffix=True)
+        offsets = [r.offset for r in results]
+        matches = [r.match for r in results]
+        # 'foo' in 'foobar' is suffix? no; matches as full word at offsets 7 and 11
+        assert offsets == [7, 11, 18]
+        assert matches == [b"foo", b"foo", b"foo"]

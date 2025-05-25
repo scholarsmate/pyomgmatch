@@ -52,6 +52,15 @@ popd &>/dev/null
 echo "Copying built native code to omg native directory..."
 cp -ar extern/omgmatch/dist/native omg/native
 
+# Copy Windows DLL dependencies for cross-platform distribution
+# Always copy Windows dependencies if the script exists, regardless of current platform
+if [[ -f "copy_windows_deps.py" ]]; then
+    echo "Copying Windows DLL dependencies for cross-platform distribution..."
+    $PYTHON copy_windows_deps.py
+else
+    echo "⚠️  Windows dependency script not found, skipping Windows DLL copying"
+fi
+
 # Recreate virtual environment
 echo "Creating pristine virtual environment for the build..."
 $PYTHON -m venv .build-venv
