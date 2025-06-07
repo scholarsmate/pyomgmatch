@@ -1,4 +1,10 @@
 # pyomgmatch
+
+[![CI/CD Pipeline](https://github.com/USERNAME/pyomgmatch/actions/workflows/ci.yml/badge.svg)](https://github.com/USERNAME/pyomgmatch/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/pyomgmatch.svg)](https://badge.fury.io/py/pyomgmatch)
+[![Python versions](https://img.shields.io/pypi/pyversions/pyomgmatch.svg)](https://pypi.org/project/pyomgmatch/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 High-performance multi-string matcher with native C backend.
 
 ## Cross-Platform Support
@@ -86,14 +92,14 @@ python -c "import omg.omg; print('Version:', omg.omg.get_version())"
 deactivate
 ```
 
-### Development Installation
+## Development and Contributing
 
-If you want to install from source for development:
+### Local Development Setup
 
 **On Linux/macOS:**
 ```bash
-# Clone the repository
-git clone <repository-url>
+# Clone the repository with submodules
+git clone --recursive <repository-url>
 cd pyomgmatch
 
 # Create and activate virtual environment
@@ -103,31 +109,89 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Install in development mode
-pip install -e .
+# Build native libraries and install in development mode
+./build.sh
 
 # Run tests
 pytest
+
+# Run tests with coverage
+pytest --cov=omg --cov-report=html
 ```
 
 **On Windows:**
-```cmd
-# Clone the repository
-git clone <repository-url>
+```powershell
+# Clone the repository with submodules
+git clone --recursive <repository-url>
 cd pyomgmatch
 
 # Create and activate virtual environment
 py -3 -m venv venv
-venv\Scripts\activate
+venv\Scripts\Activate.ps1
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Install in development mode
-pip install -e .
+# Build native libraries and install in development mode (requires Git Bash or WSL)
+./build.sh
 
 # Run tests
 pytest
+
+# Run tests with coverage
+pytest --cov=omg --cov-report=html
+```
+
+### CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **Pull Request Workflow**: Runs tests, linting, and security checks on all supported platforms
+- **CI/CD Pipeline**: Builds cross-platform packages and publishes to PyPI on releases
+- **Release Workflow**: Creates releases with proper versioning and GitHub releases
+
+#### Setting up CI/CD
+
+1. Fork/clone this repository
+2. Set up PyPI API tokens in GitHub Secrets:
+   - `PYPI_API_TOKEN` for production releases
+   - `TEST_PYPI_API_TOKEN` for testing
+3. See [`GITHUB_SETUP.md`](GITHUB_SETUP.md) for detailed setup instructions
+
+#### Creating a Release
+
+```bash
+# Create and push a version tag
+git tag v0.1.2
+git push origin v0.1.2
+```
+
+This will automatically trigger the CI/CD pipeline to build and publish the package.
+
+### Code Quality
+
+The project enforces code quality through:
+- **Black** for code formatting
+- **isort** for import sorting  
+- **flake8** for linting
+- **mypy** for type checking
+- **bandit** for security scanning
+- **pytest** with coverage reporting
+
+Run quality checks locally:
+```bash
+# Format code
+black omg/ tests/
+isort omg/ tests/
+
+# Lint code
+flake8 omg/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+
+# Type checking
+mypy omg/ --ignore-missing-imports
+
+# Security scan
+bandit -r omg/
 ```
 
 ## Quick Start

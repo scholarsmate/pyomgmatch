@@ -220,7 +220,7 @@ def test_set_threads(tmp_path):
             m.set_chunk_size(-1)
 
 
-def test_word_prefix(tmp_path):
+def test_word_prefix_and_boundary(tmp_path):
     patterns = ["foo"]
     pat_file = tmp_path / "patterns.txt"
     write_file(pat_file, patterns)
@@ -235,7 +235,7 @@ def test_word_prefix(tmp_path):
         assert matches == [b"foo", b"foo", b"foo"]
 
 
-def test_word_suffix(tmp_path):
+def test_word_suffix_and_boundary(tmp_path):
     patterns = ["foo"]
     pat_file = tmp_path / "patterns.txt"
     write_file(pat_file, patterns)

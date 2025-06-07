@@ -1,0 +1,122 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+      test_pypi_only:
+        description: 'Publish to Test PyPI only'
+        type: boolean
+        default: false
+
+jobs:
+  build-and-publish:
+    name: Build and Publish to PyPI
+    runs-on: ubuntu-latest
+    environment: release
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Docker
+      run: |
+        docker --version    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+
+    - name: Update version (manual release)
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        sed -i "s/version = .*/version = ${{ github.event.inputs.version }}/" setup.cfg
+
+    - name: Build cross-platform wheel
+      run: |
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Verify wheel contents
+      run: |
+        python -c "
+        import zipfile
+        import os
+        
+        wheel_file = None
+        for file in os.listdir('dist'):
+            if file.endswith('.whl'):
+                wheel_file = file
+                break
+        
+        if not wheel_file:
+            raise Exception('No wheel file found')
+            
+        print(f'Examining wheel: {wheel_file}')
+        
+        with zipfile.ZipFile(f'dist/{wheel_file}', 'r') as wheel:
+            files = wheel.namelist()
+            native_files = [f for f in files if 'native' in f and (f.endswith('.so') or f.endswith('.dll'))]
+            
+            print('Native files in wheel:')
+            for f in native_files:
+                print(f'  {f}')
+            
+            expected_files = [
+                'libomg-linux-x64.so',
+                'libomg-linux-arm64.so', 
+                'libomg-windows-x64.dll',
+                'libgomp-1.dll',
+                'libgcc_s_seh-1.dll',
+                'libwinpthread-1.dll'
+            ]
+            
+            missing_files = []
+            for expected in expected_files:
+                if not any(expected in f for f in native_files):
+                    missing_files.append(expected)
+            
+            if missing_files:
+                raise Exception(f'Missing required files: {missing_files}')
+            
+            print('✅ All required native files present in wheel')
+        "
+
+    - name: Check distribution
+      run: |
+        twine check dist/*
+
+    - name: Run tests on built package
+      run: |
+        pip install dist/*.whl
+        pytest tests/ -v
+
+    - name: Publish to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository-url: https://test.pypi.org/legacy/
+        skip-existing: true
+
+    - name: Publish to PyPI
+      if: github.event.inputs.test_pypi_only != 'true'
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: pyomgmatch-dist
+        path: dist/
+        retention-days: 30
